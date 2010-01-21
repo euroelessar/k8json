@@ -694,36 +694,41 @@ const uchar *parseRecord (QVariant &res, const uchar *s, int *maxLength) {
       if (*maxLength < 2) return 0;
       uchar ech = isList ? ']' : '}';
       s++; (*maxLength)--;
+      if (!(s = skipBlanks(s, maxLength))) return 0;
       QVariantMap obj; QVariantList lst;
-      for (;;) {
-        if (isList) {
-          // list, only values
-          if (!(s = parseValue(val, s, maxLength))) return 0;
-          lst << val;
-        } else {
-          // object, full fields
-          if (!(s = parseField(str, val, s, maxLength))) return 0;
-          obj[str] = val;
-        }
-        if (*maxLength > 0) {
-          bool wasComma = false;
-          // skip commas
-          while (true) {
-            if (!(s = skipBlanks(s, maxLength))) return 0;
-            if (*maxLength < 1) { ch = '\0'; wasComma = false; break; }
-            ch = *s;
-            if (ch == ech) { *s++; (*maxLength)--; break; }
-            if (ch != ',') break;
-            *s++; (*maxLength)--;
-            wasComma = true;
+      if (*maxLength < 1 || *s != ech) {
+        for (;;) {
+          if (isList) {
+            // list, only values
+            if (!(s = parseValue(val, s, maxLength))) return 0;
+            lst << val;
+          } else {
+            // object, full fields
+            if (!(s = parseField(str, val, s, maxLength))) return 0;
+            obj[str] = val;
           }
-          if (ch == ech) break; // end of the object/list
-          if (wasComma) continue;
-          // else error
+          if (*maxLength > 0) {
+            bool wasComma = false;
+            // skip commas
+            while (true) {
+              if (!(s = skipBlanks(s, maxLength))) return 0;
+              if (*maxLength < 1) { ch = '\0'; wasComma = false; break; }
+              ch = *s;
+              if (ch == ech) { *s++; (*maxLength)--; break; }
+              if (ch != ',') break;
+              *s++; (*maxLength)--;
+              wasComma = true;
+            }
+            if (ch == ech) break; // end of the object/list
+            if (wasComma) continue;
+            // else error
+          }
+          // error
+          s = 0;
+          break;
         }
-        // error
-        s = 0;
-        break;
+      } else {
+        s++; (*maxLength)--;
       }
       if (isList) res = lst; else res = obj;
       return s;

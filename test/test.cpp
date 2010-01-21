@@ -18,7 +18,7 @@
 static void testCounter () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("one.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
@@ -90,7 +90,11 @@ static void testReader () {
   while (sj) {
     //int ofs = sj-fmap;
     //fprintf(stderr, "0x%08x  %i\n", ofs, cnt);
-    if (!(sj = K8JSON::skipBlanks(sj, &len))) break;
+    for (;;) {
+      if (!(sj = K8JSON::skipBlanks(sj, &len))) break;
+      if (*sj != ',') break;
+      sj++; len--;
+    }
     val.clear();
     sj = K8JSON::parseRecord(val, sj, &len);
     if (!sj) {
@@ -117,7 +121,7 @@ static void testReader () {
 static void testReaderAll () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("one.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
@@ -172,7 +176,7 @@ static void testReaderAll () {
 static void testReaderAll2 () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("one.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
