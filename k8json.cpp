@@ -695,7 +695,10 @@ const uchar *parseRecord (QVariant &res, const uchar *s, int *maxLength) {
       uchar ech = isList ? ']' : '}';
       s++; (*maxLength)--;
       QVariantMap obj; QVariantList lst;
-      for (;;) {
+      if (*s == ech) {
+          s++;
+          (*maxLength)--;
+      } else for (;;) {
         if (isList) {
           // list, only values
           if (!(s = parseValue(val, s, maxLength))) return 0;
