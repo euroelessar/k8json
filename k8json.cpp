@@ -41,7 +41,6 @@ static const quint8 utf8Length[256] = {
 /*
  * check if given (const uchar *) represents valid UTF-8 sequence
  * NULL (or empty) s is not valid
- * sequence ends on '\0'
  */
 bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
   if (!s) return false;
@@ -59,7 +58,7 @@ bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
     if (t&0x08) return false; // invalid utf-8 sequence
     if (t) {
       // utf-8
-      if (maxLen < t) return false; // invalid utf-8 sequence
+	  if (maxLen != 0 && maxLen < t) return false; // invalid utf-8 sequence
       while (--t) {
         quint8 b = *tmpS++; maxLen--;
         if (utf8Length[b] != 9) return false; // invalid utf-8 sequence
