@@ -45,12 +45,12 @@ static const quint8 utf8Length[256] = {
 bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
   if (!s) return false;
   if (maxLen < 1) return false;
-  uchar ch = 0; maxLen--;
+  uchar ch = 0;
   const uchar *tmpS = s;
   while (maxLen > 0) {
-    ch = *tmpS++;
+    ch = *tmpS++; maxLen--;
     if (!ch) {
-      if (zeroInvalid) return false;
+      if (maxLen != 0 && zeroInvalid) return false;
       break;
     }
     // ascii or utf-8
@@ -58,13 +58,12 @@ bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
     if (t&0x08) return false; // invalid utf-8 sequence
     if (t) {
       // utf-8
-      if (maxLen < t) return false; // invalid utf-8 sequence
-      while (--t) {
+      if (maxLen < --t) return false; // invalid utf-8 sequence
+      while (t--) {
         quint8 b = *tmpS++; maxLen--;
         if (utf8Length[b] != 9) return false; // invalid utf-8 sequence
       }
     }
-    maxLen--;
   }
   return true;
 }
