@@ -48,7 +48,7 @@ bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
   uchar ch = 0; maxLen--;
   const uchar *tmpS = s;
   while (maxLen > 0) {
-    ch = *tmpS++; maxLen--;
+    ch = *tmpS++;
     if (!ch) {
       if (zeroInvalid) return false;
       break;
@@ -58,12 +58,13 @@ bool isValidUtf8 (const uchar *s, int maxLen, bool zeroInvalid) {
     if (t&0x08) return false; // invalid utf-8 sequence
     if (t) {
       // utf-8
-	  if (maxLen != 0 && maxLen < t) return false; // invalid utf-8 sequence
+      if (maxLen < t) return false; // invalid utf-8 sequence
       while (--t) {
         quint8 b = *tmpS++; maxLen--;
         if (utf8Length[b] != 9) return false; // invalid utf-8 sequence
       }
     }
+    maxLen--;
   }
   return true;
 }
