@@ -216,7 +216,7 @@ const uchar *skipRec (const uchar *s, int *maxLength) {
           }
         } else {
           //fprintf(stderr, "empty!\n");
-          *s++; maxLen--; // skip terminator
+          s++; maxLen--; // skip terminator
         }
         //fprintf(stderr, "[%s]\n", s);
         break;
@@ -728,9 +728,9 @@ const uchar *parseRecord (QVariant &res, const uchar *s, int *maxLength) {
               if (!(s = skipBlanks(s, maxLength))) return 0;
               if (*maxLength < 1) { ch = '\0'; wasComma = false; break; }
               ch = *s;
-              if (ch == ech) { *s++; (*maxLength)--; break; }
+              if (ch == ech) { s++; (*maxLength)--; break; }
               if (ch != ',') break;
-              *s++; (*maxLength)--;
+              s++; (*maxLength)--;
               wasComma = true;
             }
             if (ch == ech) break; // end of the object/list
