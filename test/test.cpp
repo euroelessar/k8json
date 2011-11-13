@@ -18,7 +18,7 @@
 static void testCounter () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("onex.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
@@ -47,6 +47,7 @@ static void testCounter () {
       fprintf(stderr, "ERROR: invalid JSON file!\n");
       break;
     }
+    //fprintf(stderr, "[%c]\n", *sj);
     cnt++;
     switch (*sj) {
       case ',': sj++; len--; break;
@@ -90,7 +91,11 @@ static void testReader () {
   while (sj) {
     //int ofs = sj-fmap;
     //fprintf(stderr, "0x%08x  %i\n", ofs, cnt);
-    if (!(sj = K8JSON::skipBlanks(sj, &len))) break;
+    for (;;) {
+      if (!(sj = K8JSON::skipBlanks(sj, &len))) break;
+      if (*sj != ',') break;
+      sj++; len--;
+    }
     val.clear();
     sj = K8JSON::parseRecord(val, sj, &len);
     if (!sj) {
@@ -117,7 +122,7 @@ static void testReader () {
 static void testReaderAll () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("onex.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
@@ -172,7 +177,7 @@ static void testReaderAll () {
 static void testReaderAll2 () {
   do {
 
-  QFile fl("tc_hist.json");
+  QFile fl("onex.json");
   if (!fl.open(QIODevice::ReadOnly)) {
     fprintf(stderr, "ERROR: can't open input file!\n");
     return;
@@ -234,10 +239,10 @@ int main (/*int argc, char *argv[]*/) {
 //bool parseString (QString &str, const char *s, int charCount, int *bytesProcessed=0);
 */
 
-  //testCounter();
+  testCounter();
   testReader();
-  //testReaderAll();
-  //testReaderAll2();
+  testReaderAll();
+  testReaderAll2();
 
   return 0;
 }

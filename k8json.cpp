@@ -177,7 +177,8 @@ const uchar *skipRec (const uchar *s, int *maxLength) {
   int maxLen = *maxLength;
   if (maxLen < 0) return 0;
   int fieldNameSeen = 0;
-  while (maxLen > 0) {
+  bool again = true;
+  while (again && maxLen > 0) {
     // skip blanks
     if (!(s = skipBlanks(s, &maxLen))) return 0;
     if (!maxLen) break;
@@ -186,34 +187,46 @@ const uchar *skipRec (const uchar *s, int *maxLength) {
     // fieldNameSeen=1: waiting for ':'
     // fieldNameSeen=2: field name was seen, ':' was seen too, waiting for value
     // fieldNameSeen=3: everything was seen, waiting for terminator
+    //fprintf(stderr, " ch=[%c]; fns=%i\n", ch, fieldNameSeen);
     if (ch == ':') {
       if (fieldNameSeen != 1) return 0; // wtf?
       fieldNameSeen++;
       continue;
     }
     // it must be a token, skip it
-    bool again = false;
+    again = false;
+    //fprintf(stderr, "   s=%s\n==========\n", s);
     switch (ch) {
       case '{': case '[':
         if (fieldNameSeen == 1) return 0; // waiting for delimiter; error
         fieldNameSeen = 3;
         // recursive skip
         qch = (ch=='{' ? '}' : ']'); // end char
-        for (;;) {
-          if (!(s = skipRec(s, &maxLen))) return 0;
-          if (maxLen < 1) return 0; // no closing char
-          ch = *s++; maxLen--;
-          if (ch == ',') continue; // skip next field/value pair
-          if (ch == qch) break; // end of the list or object
-          return 0; // error!
+        if (!(s = skipBlanks(s, &maxLen))) return 0;
+        if (maxLen < 1 || *s != qch) {
+          //fprintf(stderr, " [%c]\n", *s);
+          for (;;) {
+            if (!(s = skipRec(s, &maxLen))) return 0;
+            if (maxLen < 1) return 0; // no closing char
+            ch = *s++; maxLen--;
+            if (ch == ',') continue; // skip next field/value pair
+            if (ch == qch) break; // end of the list or object
+            return 0; // error!
+          }
+        } else {
+          //fprintf(stderr, "empty!\n");
+          s++; maxLen--; // skip terminator
         }
+        //fprintf(stderr, "[%s]\n", s);
         break;
       case ']': case '}': case ',': // terminator
+        //fprintf(stderr, " term [%c] (%i)\n", ch, fieldNameSeen);
         if (fieldNameSeen != 3) return 0; // incomplete field
         s--; maxLen++; // back to this char
         break;
       case '"': case '\x27': // string
         if (fieldNameSeen == 1 || fieldNameSeen > 2) return 0; // no delimiter
+        //fprintf(stderr, "000\n");
         fieldNameSeen++;
         qch = ch;
         while (*s && maxLen > 0) {
@@ -241,27 +254,28 @@ const uchar *skipRec (const uchar *s, int *maxLength) {
             default: ; // escaped char already skiped
           }
         }
+        //fprintf(stderr, " str [%c]; ml=%i\n", *s, maxLen);
         if (maxLen < 1 || *s != qch) return 0; // error
         s++; maxLen--; // skip quote
+        //fprintf(stderr, " 001\n");
         again = true;
         break;
       default: // we can check for punctuation here, but i'm too lazy to do it
         if (fieldNameSeen == 1 || fieldNameSeen > 2) return 0; // no delimiter
         fieldNameSeen++;
-        if (isValidIdChar(ch)) {
+        if (isValidIdChar(ch) || ch == '-' || ch == '.' || ch == '+') {
           // good token, skip it
           again = true; // just a token, skip it and go on
           // check for valid utf8?
           while (*s && maxLen > 0) {
             ch = *s++; maxLen--;
-            if (ch != '.' && !isValidIdChar(ch)) {
+            if (ch != '.' && ch != '-' && ch != '+' && !isValidIdChar(ch)) {
               s--; maxLen++;
               break;
             }
           }
         } else return 0; // error
     }
-    if (!again) break;
   }
   if (fieldNameSeen != 3) return 0;
   // skip blanks
@@ -693,39 +707,41 @@ const uchar *parseRecord (QVariant &res, const uchar *s, int *maxLength) {
       if (*maxLength < 2) return 0;
       uchar ech = isList ? ']' : '}';
       s++; (*maxLength)--;
+      if (!(s = skipBlanks(s, maxLength))) return 0;
       QVariantMap obj; QVariantList lst;
-      if (*s == ech) {
-          s++;
-          (*maxLength)--;
-      } else for (;;) {
-        if (isList) {
-          // list, only values
-          if (!(s = parseValue(val, s, maxLength))) return 0;
-          lst << val;
-        } else {
-          // object, full fields
-          if (!(s = parseField(str, val, s, maxLength))) return 0;
-          obj[str] = val;
-        }
-        if (*maxLength > 0) {
-          bool wasComma = false;
-          // skip commas
-          while (true) {
-            if (!(s = skipBlanks(s, maxLength))) return 0;
-            if (*maxLength < 1) { ch = '\0'; wasComma = false; break; }
-            ch = *s;
-            if (ch == ech) { s++; (*maxLength)--; break; }
-            if (ch != ',') break;
-            s++; (*maxLength)--;
-            wasComma = true;
+      if (*maxLength < 1 || *s != ech) {
+        for (;;) {
+          if (isList) {
+            // list, only values
+            if (!(s = parseValue(val, s, maxLength))) return 0;
+            lst << val;
+          } else {
+            // object, full fields
+            if (!(s = parseField(str, val, s, maxLength))) return 0;
+            obj[str] = val;
           }
-          if (ch == ech) break; // end of the object/list
-          if (wasComma) continue;
-          // else error
+          if (*maxLength > 0) {
+            bool wasComma = false;
+            // skip commas
+            while (true) {
+              if (!(s = skipBlanks(s, maxLength))) return 0;
+              if (*maxLength < 1) { ch = '\0'; wasComma = false; break; }
+              ch = *s;
+              if (ch == ech) { s++; (*maxLength)--; break; }
+              if (ch != ',') break;
+              s++; (*maxLength)--;
+              wasComma = true;
+            }
+            if (ch == ech) break; // end of the object/list
+            if (wasComma) continue;
+            // else error
+          }
+          // error
+          s = 0;
+          break;
         }
-        // error
-        s = 0;
-        break;
+      } else {
+        s++; (*maxLength)--;
       }
       if (isList) res = lst; else res = obj;
       return s;
