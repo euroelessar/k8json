@@ -778,11 +778,11 @@ _K8_JSON_COMPLEX_WORD bool generateExCB (void *udata, generatorCB cb, QString &e
     case QVariant::Invalid: res += "null"; break;
     case QVariant::Bool: res += (val.toBool() ? "true" : "false"); break;
     case QVariant::Char: res += quote(QString(val.toChar())).toUtf8(); break;
-    case QVariant::Double: res += QString::number(val.toDouble()).toAscii(); break; //CHECKME: is '.' always '.'?
-    case QVariant::Int: res += QString::number(val.toInt()).toAscii(); break;
-    case QVariant::LongLong: res += QString::number(val.toLongLong()).toAscii(); break;
-    case QVariant::UInt: res += QString::number(val.toUInt()).toAscii(); break;
-    case QVariant::ULongLong: res += QString::number(val.toULongLong()).toAscii(); break;
+    case QVariant::Double: res += QString::number(val.toDouble()).toLatin1(); break; //CHECKME: is '.' always '.'?
+    case QVariant::Int: res += QString::number(val.toInt()).toLatin1(); break;
+    case QVariant::LongLong: res += QString::number(val.toLongLong()).toLatin1(); break;
+    case QVariant::UInt: res += QString::number(val.toUInt()).toLatin1(); break;
+    case QVariant::ULongLong: res += QString::number(val.toULongLong()).toLatin1(); break;
     case QVariant::String: res += quote(val.toString()).toUtf8(); break;
     case QVariant::Map: {
       //for (int c = indent; c > 0; c--) res += ' ';
