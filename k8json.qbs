@@ -5,7 +5,7 @@ StaticLibrary {
     destination: "lib"
 
     Depends { name: "cpp" }
-    Depends { name: "qt"; submodules: 'core' }
+    Depends { name: "Qt"; submodules: 'core' }
 
     cpp.defines: [
         "K8JSON_INCLUDE_GENERATOR",
