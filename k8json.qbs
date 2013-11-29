@@ -2,7 +2,7 @@ import qbs.base 1.0
 
 StaticLibrary {
     name: "k8json"
-    destination: "lib"
+    destinationDirectory: "lib"
 
     Depends { name: "cpp" }
     Depends { name: "Qt"; submodules: 'core' }
